@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name = "Supay",
-    version = "0.0.2",
+    version = "0.0.3",
     description = "A simple Daemonizing module for Python scripts.",
     long_description = """\
 An effective way to daemonize a Python script with some added
