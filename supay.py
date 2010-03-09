@@ -122,10 +122,10 @@ class Daemon(object):
             if self.verbose:
                 print "Could not kill %s process.\n" % self.name
                 print e
-            if e.errno == 13: # catch a 'no such process'
+            if e.errno == 3: # catch a 'no such process'
                 os.remove(self.pid)
                 if self.verbose:
-                    print "Removed defunct PID file. Try starting the daemon now."
+                    print "\nRemoved defunct PID file. Try starting the daemon now.\n"
             
         except IOError:
             if self.verbose:
