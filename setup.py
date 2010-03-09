@@ -22,7 +22,7 @@ setup(
  """,
 
     license = "MIT",
-    py_modules = ['supay',]
+    py_modules = ['supay',],
     keywords = "daemon daemonize start stop status spawn process processses",
     url = "http://code.google.com/p/supay",   
 
