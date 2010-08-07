@@ -30,9 +30,9 @@ class Daemon(object):
         self.log = log
         self.pid_dir = pid_dir
         self.pid = "%s/%s.pid" % (self.pid_dir, self.name)
-        self.stdin = "%s/%s" % (stdin, self.name)
-        self.stdout = "%s/%s" % (stdout, self.name)
-        self.stderr = "%s/%s" % (stderr, self.name)
+        self.stdin = "%s/%s.log" % (stdin, self.name)
+        self.stdout = "%s/%s.log" % (stdout, self.name)
+        self.stderr = "%s/%s.log" % (stderr, self.name)
 
     def start(self, check_pid=True, verbose=True):
         """
@@ -92,16 +92,19 @@ class Daemon(object):
             print "With PID:\t %s\n" % pid
         
         if self.log:
-            if not os.path.isfile(self.stdin):
-                log = open(self.stdin, 'w')
-                log.close()
-            si = open(self.stdin, 'r')
-            so = open(self.stdout, 'a+')
-            se = open(self.stderr, 'a+', 0)
-            os.dup2(si.fileno(), sys.stdin.fileno())
-            os.dup2(so.fileno(), sys.stdout.fileno())
-            os.dup2(se.fileno(), sys.stderr.fileno())
-            
+            try:
+                if not os.path.isfile(self.stdin):
+                    log = open(self.stdin, 'w')
+                    log.close()
+                si = open(self.stdin, 'r')
+                so = open(self.stdout, 'a+')
+                se = open(self.stderr, 'a+', 0)
+                os.dup2(si.fileno(), sys.stdin.fileno())
+                os.dup2(so.fileno(), sys.stdout.fileno())
+                os.dup2(se.fileno(), sys.stderr.fileno())
+            except IOError, e:
+                sys.stderr.write(e)
+                sys.exit(1)
 
     def stop(self, verbose=True):
         """
