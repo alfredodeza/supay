@@ -7,7 +7,7 @@ import subprocess
 import os
 
 pid_directory = os.getcwd()
-daemon = supay.Daemon(name='testScript', pid_dir=pid_directory)
+daemon = supay.Daemon(name='testScript', catch_all_log='/tmp', pid_dir='/tmp')
 
 def run():
     daemon.start()
