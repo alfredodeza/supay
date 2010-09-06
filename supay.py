@@ -22,6 +22,7 @@ class Daemon(object):
     def __init__(self, name='PythonDaemon',
                  pid_dir='/var/run',
                  log=True,
+                 catch_all_log=False,
                  stdin='/var/log',
                  stdout='/var/log',
                  stderr='/var/log',
@@ -30,9 +31,22 @@ class Daemon(object):
         self.log = log
         self.pid_dir = pid_dir
         self.pid = "%s/%s.pid" % (self.pid_dir, self.name)
+        if catch_all_log:
+            stdin = stdout = stderr = catch_all_log
         self.stdin = "%s/%s.log" % (stdin, self.name)
         self.stdout = "%s/%s.log" % (stdout, self.name)
         self.stderr = "%s/%s.log" % (stderr, self.name)
+
+        # give flexibility for unique files in logging 
+        if not os.path.isdir(stdin):
+            self.stdin = stdin
+
+        if not os.path.isdir(stdout):
+            self.stdout = stdout
+
+        if not os.path.isdir(stderr):
+            self.stderr = stderr
+
 
     def start(self, check_pid=True, verbose=True):
         """
@@ -159,4 +173,4 @@ class Daemon(object):
             message = "\n%s process is running with PID: %s\n" % (self.name, pid)
             sys.stdout.write(message)
         
-            
+

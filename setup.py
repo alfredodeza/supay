@@ -3,14 +3,9 @@ distribute_setup.use_setuptools()
 from setuptools import setup, find_packages
 setup(
     name = "Supay",
-    version = "0.0.6",
+    version = "0.0.7",
     packages = find_packages(),
     scripts = ['supay.py'],
-
-    package_data = {
-        # If any package contains *.txt or *.rst files, include them:
-        '': ['*.txt'],
-        },
 
     # metadata for upload to PyPI
     author = "Alfredo Deza",
