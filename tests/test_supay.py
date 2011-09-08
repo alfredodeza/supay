@@ -1,4 +1,4 @@
-import unittest
+from unittest import TestCase
 import os
 import sys
 from subprocess import Popen, PIPE
@@ -19,7 +19,7 @@ class MockSys(object):
         return ''.join(self.message)
 
 
-class TestDaemon(unittest.TestCase):
+class TestDaemon(TestCase):
     
 
     def tearDown(self):
