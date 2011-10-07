@@ -3,7 +3,7 @@ distribute_setup.use_setuptools()
 from setuptools import setup, find_packages
 setup(
     name = "Supay",
-    version = "0.0.7",
+    version = "0.0.8",
     packages = find_packages(),
     scripts = ['supay.py'],
 
