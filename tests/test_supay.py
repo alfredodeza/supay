@@ -3,8 +3,89 @@ import os
 import sys
 from subprocess import Popen, PIPE
 from time import sleep
+from mock import Mock, patch
+from cStringIO import StringIO
 
 import supay
+
+class TestDaemonLogging(TestCase):
+
+
+    def test_catch_all_log_takes_precedence(self):
+        daemon = supay.Daemon(catch_all_log='/tmp/my_deamon.log')
+        result = daemon.log_path('/tmp')
+
+        assert result == '/tmp/my_deamon.log'
+
+
+    def test_catch_all_log_should_never_be_a_dir(self):
+        daemon = supay.Daemon(catch_all_log='/tmp')
+        result = daemon.log_path('/tmp')
+
+        assert result == '/tmp/PythonDaemon.log'
+
+
+    def test_log_path_convert_dir(self):
+        daemon = supay.Daemon()
+        result = daemon.log_path('/tmp/foo.log')
+
+        assert result == '/tmp/foo.log'
+
+
+    def test_log_path_never_is_a_dir(self):
+        daemon = supay.Daemon()
+        result = daemon.log_path('/tmp')
+
+        assert result == '/tmp/PythonDaemon.log'
+
+
+    def test_from_dir_file(self):
+        daemon = supay.Daemon()
+        result = daemon.dir_to_file('/tmp')
+
+        assert result == '/tmp/PythonDaemon.log'
+
+    def test_from_dir_file_if_it_is_file(self):
+        daemon = supay.Daemon()
+        result = daemon.dir_to_file('/tmp/foo.log')
+
+        assert result == '/tmp/foo.log'
+
+
+class TestFork(TestCase):
+
+    def setUp(self):
+        self.daemon = supay.Daemon()
+
+    def test_pid_is_greater_than_zero(self):
+        m_fork = Mock()
+        self.assertRaises(SystemExit, self.daemon.fork, m_fork)
+
+
+    def test_fork_raises_OSError(self):
+        daemon = supay.Daemon(err_writer=StringIO())
+        m_fork = Mock(side_effect=OSError)
+        with patch('supay.sys.exit'):
+            daemon.fork(m_fork)
+
+        assert 'fork failed' in daemon.err_writer.getvalue()
+
+        
+
+
+class TestErrMessage(TestCase):
+
+    def test_should_output_message_to_stderr(self):
+        daemon = supay.Daemon(err_writer=StringIO())
+        with patch('supay.sys.exit'):
+            daemon.err_msg('foo')
+
+        assert daemon.err_writer.getvalue() == 'foo'
+
+    def test_should_raise_systemExit(self):
+        daemon = supay.Daemon(err_writer=StringIO())
+        self.assertRaises(SystemExit, daemon.err_msg, 'foo')
+        
 
 class MockSys(object):
     """Can grab messages sent to stdout or stderr"""
