@@ -26,27 +26,40 @@ class Daemon(object):
                  stdin='/var/log',
                  stdout='/var/log',
                  stderr='/var/log',
+                 err_writer = sys.stderr,
                  ):
+        self.err_writer = err_writer
         self.name = name
         self.log = log
         self.pid_dir = pid_dir
         self.pid = "%s/%s.pid" % (self.pid_dir, self.name)
-        if catch_all_log:
-            stdin = stdout = stderr = catch_all_log
-        self.stdin = "%s/%s.log" % (stdin, self.name)
-        self.stdout = "%s/%s.log" % (stdout, self.name)
-        self.stderr = "%s/%s.log" % (stderr, self.name)
+        self.catch_all_log = catch_all_log
 
-        # give flexibility for unique files in logging 
-        if not os.path.isdir(stdin):
-            self.stdin = stdin
+        self.stdin = self.log_path(stdin)
+        self.stderr = self.log_path(stderr)
+        self.stdout = self.log_path(stdout)
 
-        if not os.path.isdir(stdout):
-            self.stdout = stdout
+    def log_path(self, path):
+        if self.catch_all_log:
+            return self.dir_to_file(self.catch_all_log)
+        return self.dir_to_file(path)
 
-        if not os.path.isdir(stderr):
-            self.stderr = stderr
+    def dir_to_file(self, path):
+        if os.path.isdir(path):
+            return os.path.join(path, self.name+'.log')
+        return path
 
+    def fork(self, _fork=os.fork):
+        try:
+            pid = _fork()
+            if pid > 0:
+                sys.exit(0)
+        except OSError, exc:
+            self.err_msg('fork failed')
+
+    def err_msg(self, msg):
+        self.err_writer.write(msg)
+        sys.exit(1)
 
     def start(self, check_pid=True, verbose=True):
         """
@@ -58,31 +71,22 @@ class Daemon(object):
         
         if self.check_pid:
             if os.path.isfile(self.pid):
-                print "\n%s already running\n " % self.name 
-                sys.exit(1)
+                msg = "\n%s already running\n " % self.name 
+                self.err_msg(msg)
             
         sys.stdout.flush()
         sys.stderr.flush()
-        try:
-            pid = os.fork()
-            if pid > 0:
-                sys.exit(0)
-        except OSError, exc:
-            sys.exit("%s: fork #1 failed: (%d) %s\n" % (sys.argv[0],
-            exc.errno, exc.strerror))
+
+        # first fork
+        self.fork()
 
         os.chdir("/")
         os.umask(0)
         os.setsid()
-
-        try:
-            pid = os.fork()
-            if pid > 0:
-                sys.exit(0)
-        except OSError, exc:
-            sys.exit("%s: fork #2 failed: (%d) %s\n" % (sys.argv[0],
-            exc.errno, exc.strerror))
         
+        # second fork
+        self.fork()
+
         if self.check_pid:
             try:
                 pid_file =  open(self.pid, "w")
@@ -93,13 +97,11 @@ class Daemon(object):
                 if e.errno == 13:
                     error = "You do not have permission to create the PID file:\
 \n%s\n" % self.pid
-                    sys.stderr.write(error)
-                    sys.exit(1)
+                    self.err_msg(error)
                 else:
                     error_message = """The Daemon module had an IO error:
 %s \n""" % e
-                    sys.stderr.write(error_message)
-                    sys.exit(1)
+                    self.err_msg(error_message)
         
         if self.verbose:
             print "\nStarting the %s daemon." % self.name
@@ -117,8 +119,7 @@ class Daemon(object):
                 os.dup2(so.fileno(), sys.stdout.fileno())
                 os.dup2(se.fileno(), sys.stderr.fileno())
             except IOError, e:
-                sys.stderr.write(e)
-                sys.exit(1)
+                self.err_msg(e)
 
     def stop(self, verbose=True):
         """
